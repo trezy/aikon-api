@@ -5,7 +5,7 @@ const BaseRoute = require('../../helpers/BaseRoute')
 
 
 
-class DeleteCreditCardEndpoint extends BaseRoute {
+class DeleteCardEndpoint extends BaseRoute {
   /***************************************************************************\
     Public methods
   \***************************************************************************/
@@ -13,11 +13,16 @@ class DeleteCreditCardEndpoint extends BaseRoute {
   async handleRequest (ctx, params) {
     const { stripe } = ctx
     const {
-      creditCardID,
-      customerID,
+      accountID,
+      cardID,
     } = params
 
-    ctx.data = await stripe.customers.deleteCard(customerID, creditCardID)
+    const account = await stripe.accounts.retrieve(accountID)
+    const sourceID = account.external_accounts.data.find(({ id }) => (id === cardID)).metadata.sourceID
+
+    await stripe.customers.deleteCard(account.metadata.customerID, sourceID)
+
+    ctx.data = await stripe.accounts.deleteExternalAccount(accountID, cardID)
   }
 
 
@@ -32,7 +37,7 @@ class DeleteCreditCardEndpoint extends BaseRoute {
   }
 
   get url () {
-    return '/:customerID/:creditCardID'
+    return '/:accountID/:cardID'
   }
 }
 
@@ -40,4 +45,4 @@ class DeleteCreditCardEndpoint extends BaseRoute {
 
 
 
-module.exports = DeleteCreditCardEndpoint
+module.exports = DeleteCardEndpoint

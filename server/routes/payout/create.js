@@ -21,25 +21,24 @@ class CreatePayoutEndpoint extends BaseRoute {
     const { stripe } = ctx
     const {
       amount,
-      destinationAccountID,
-      destinationPayoutMethodID,
+      accountID,
       transactionID,
     } = params
 
-    const transaction = await stripe.charges.retrieve(transactionID)
+    let transaction = await stripe.charges.retrieve(transactionID)
 
     if (!transaction.metadata.readyToPay) {
-      await stripe.charges.update(transactionID, {
+      transaction = await stripe.charges.update(transactionID, {
         metadata: {
+          ...transaction.metadata,
           amount,
-          destinationAccountID,
-          destinationPayoutMethodID,
-          paid: false,
+          accountID,
           readyToPay: true,
         },
       })
     }
 
+    ctx.data = transaction
     ctx.status = 202
   }
 
@@ -57,14 +56,13 @@ class CreatePayoutEndpoint extends BaseRoute {
   get propTypes () {
     return {
       amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-      destinationAccountID: PropTypes.string.isRequired,
-      destinationPayoutMethodID: PropTypes.string.isRequired,
+      accountID: PropTypes.string.isRequired,
       transactionID: PropTypes.string.isRequired,
     }
   }
 
   get url () {
-    return '/:destinatiPayoutMethod/:destinationBankAccountID/:transactionID'
+    return '/:accountID/:transactionID'
   }
 }
 

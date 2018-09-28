@@ -14,19 +14,26 @@ class CreateCustomerEndpoint extends BaseRoute {
   async handleRequest (ctx, params) {
     const { stripe } = ctx
 
-    const customer = await stripe.customers.create({})
-
-    ctx.data = await stripe.accounts.create({
+    const account = await stripe.accounts.create({
       ...params,
       payout_schedule: {
-        delay_days: 'minimum',
         interval: 'manual',
       },
-      metadata: { customer: customer.id },
       type: 'custom',
     })
 
-    ctx.data.customer = customer
+    const customer = await stripe.customers.create({
+      metadata: {
+        accountID: account.id,
+      },
+    })
+
+    ctx.data = await stripe.accounts.update(account.id, {
+      metadata: {
+        ...account.metadata,
+        customerID: customer.id,
+      },
+    })
   }
 
 

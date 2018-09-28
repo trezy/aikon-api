@@ -21,13 +21,7 @@ class GetCustomerEndpoint extends BaseRoute {
     const { stripe } = ctx
     const { id } = params
 
-    const account = await stripe.accounts.retrieve(id)
-    const customer = await stripe.customers.retrieve(account.metadata.customer)
-
-    ctx.data = {
-      ...account,
-      customer,
-    }
+    ctx.data = await stripe.accounts.retrieve(id)
   }
 
 

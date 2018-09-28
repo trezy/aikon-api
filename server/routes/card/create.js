@@ -7,12 +7,13 @@ const PropTypes = require('prop-types')
 
 // Component imports
 const BaseRoute = require('../../helpers/BaseRoute')
+const CardShape = require('../../shapes/card')
 
 
 
 
 
-class CreateTransactionEndpoint extends BaseRoute {
+class CreateCardEndpoint extends BaseRoute {
   /***************************************************************************\
     Public methods
   \***************************************************************************/
@@ -20,28 +21,25 @@ class CreateTransactionEndpoint extends BaseRoute {
   async handleRequest (ctx, params) {
     const { stripe } = ctx
     const {
-      amount,
       accountID,
-      source,
+      token,
     } = params
 
     const account = await stripe.accounts.retrieve(accountID)
 
-    const chargeInfo = {
-      amount,
-      currency: 'usd',
-      customer: account.metadata.customerID,
-      metadata: {
-        paid: false,
-        readyToPay: false,
-      },
-    }
+    const externalAccount = await stripe.accounts.createExternalAccount(accountID, {
+      external_account: token,
+    })
 
-    if (source) {
-      chargeInfo.source = account.external_accounts.data.find(({ id }) => (id === source)).metadata.sourceID
-    }
+    const customer = await stripe.customers.update(account.metadata.customerID, {
+      source: token,
+    })
 
-    ctx.data = await stripe.charges.create(chargeInfo)
+    const sourceID = customer.sources.data.find(({ fingerprint }) => (fingerprint === externalAccount.fingerprint)).id
+
+    ctx.data = await stripe.accounts.updateExternalAccount(accountID, externalAccount.id, {
+      metadata: { sourceID },
+    })
   }
 
 
@@ -57,10 +55,13 @@ class CreateTransactionEndpoint extends BaseRoute {
 
   get propTypes () {
     return {
-      amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-      accountID: PropTypes.string.isRequired,
-      source: PropTypes.string,
+      ...CardShape,
+      accountID: PropTypes.string,
     }
+  }
+
+  get url () {
+    return '/:accountID'
   }
 }
 
@@ -68,4 +69,4 @@ class CreateTransactionEndpoint extends BaseRoute {
 
 
 
-module.exports = CreateTransactionEndpoint
+module.exports = CreateCardEndpoint
