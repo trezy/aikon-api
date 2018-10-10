@@ -31,7 +31,7 @@ class UpdatePayoutEndpoint extends BaseRoute {
         readyToPay,
       } = transaction.metadata
 
-      if (readyToPay && !paid) {
+      if ((readyToPay === 'true') && (paid === 'false')) {
         const {
           accountID,
           amount,

@@ -27,7 +27,7 @@ class CreatePayoutEndpoint extends BaseRoute {
 
     let transaction = await stripe.charges.retrieve(transactionID)
 
-    if (!transaction.metadata.readyToPay) {
+    if (transaction.metadata.readyToPay === 'false') {
       transaction = await stripe.charges.update(transactionID, {
         metadata: {
           ...transaction.metadata,
