@@ -22,17 +22,17 @@ class CreateCardEndpoint extends BaseRoute {
     const { stripe } = ctx
     const {
       accountID,
-      token,
+      tokens,
     } = params
 
     const account = await stripe.accounts.retrieve(accountID)
 
     const externalAccount = await stripe.accounts.createExternalAccount(accountID, {
-      external_account: token,
+      external_account: tokens[0],
     })
 
     const customer = await stripe.customers.update(account.metadata.customerID, {
-      source: token,
+      source: tokens[1],
     })
 
     const sourceID = customer.sources.data.find(({ fingerprint }) => (fingerprint === externalAccount.fingerprint)).id
@@ -41,6 +41,7 @@ class CreateCardEndpoint extends BaseRoute {
       metadata: { sourceID },
     })
   }
+
 
 
 
@@ -55,8 +56,8 @@ class CreateCardEndpoint extends BaseRoute {
 
   get propTypes () {
     return {
-      ...CardShape,
       accountID: PropTypes.string,
+      tokens: PropTypes.arrayOf(PropTypes.string),
     }
   }
 
